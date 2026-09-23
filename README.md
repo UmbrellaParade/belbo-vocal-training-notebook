@@ -19,4 +19,4 @@
 
 ## リリース手順
 
-ZIP内の先頭ディレクトリは `belbo-vocal-training-notebook/` とします。GitHub ReleaseのタグとプラグインヘッダーのVersionを一致させ、リリース資産名を `belbo-vocal-training-notebook.zip` にします。
+ZIP内の先頭ディレクトリは `belbo-vocal-training-notebook/` とします。GitHub ReleaseのタグとプラグインヘッダーのVersionを一致させ、リリース資産名を `belbo-vocal-training-notebook.zip` にします。新しいGitHub Releaseを公開すると、WordPressの更新画面に通知されます。
