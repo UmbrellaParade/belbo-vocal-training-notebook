@@ -39,11 +39,13 @@ final class BVTN_Plugin
     private function __construct()
     {
         add_action('init', array($this, 'register_post_type'));
+        add_action('init', array($this, 'maybe_upgrade'), 20);
         add_action('admin_menu', array($this, 'register_menu'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('admin_post_bvtn_save_note', array($this, 'save_note'));
         add_action('admin_post_bvtn_delete_note', array($this, 'delete_note'));
         add_action('admin_post_bvtn_export', array($this, 'export_notes'));
+        add_filter('auto_update_plugin', array($this, 'allow_auto_updates'), 10, 2);
     }
 
     public static function activate(): void
@@ -63,7 +65,7 @@ final class BVTN_Plugin
         ));
 
         if (!is_wp_error($note_id)) {
-            update_post_meta($note_id, '_bvtn_observed_on', wp_date('Y-m-d'));
+            update_post_meta($note_id, '_bvtn_observed_on', '2026-09-23');
             update_post_meta($note_id, '_bvtn_category', 'band');
             update_post_meta($note_id, '_bvtn_status', 'idea');
             update_post_meta($note_id, '_bvtn_tags', 'テヌート, アタック, 音価, バンド');
@@ -75,11 +77,43 @@ final class BVTN_Plugin
         }
 
         update_option('bvtn_seeded_version', BVTN_VERSION, false);
+        update_option('bvtn_plugin_version', BVTN_VERSION, false);
     }
 
     public function register_post_type(): void
     {
         self::register_post_type_static();
+    }
+
+    public function maybe_upgrade(): void
+    {
+        $installed = (string) get_option('bvtn_plugin_version', '1.0.0');
+        if (version_compare($installed, '1.0.1', '<')) {
+            $notes = get_posts(array(
+                'post_type' => self::POST_TYPE,
+                'post_status' => 'publish',
+                'posts_per_page' => 20,
+                's' => 'アタックと音価でバンドに埋もれない声を作る',
+            ));
+            foreach ($notes as $note) {
+                if ($note->post_title === 'アタックと音価でバンドに埋もれない声を作る'
+                    && get_post_meta($note->ID, '_bvtn_observed_on', true) === '2026-09-24') {
+                    update_post_meta($note->ID, '_bvtn_observed_on', '2026-09-23');
+                    break;
+                }
+            }
+        }
+        update_option('bvtn_plugin_version', BVTN_VERSION, false);
+    }
+
+    public function allow_auto_updates(bool $update, $item): bool
+    {
+        if (is_object($item)
+            && isset($item->plugin)
+            && $item->plugin === plugin_basename(BVTN_FILE)) {
+            return true;
+        }
+        return $update;
     }
 
     private static function register_post_type_static(): void
