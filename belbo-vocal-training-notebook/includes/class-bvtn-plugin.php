@@ -45,7 +45,6 @@ final class BVTN_Plugin
         add_action('admin_post_bvtn_save_note', array($this, 'save_note'));
         add_action('admin_post_bvtn_delete_note', array($this, 'delete_note'));
         add_action('admin_post_bvtn_export', array($this, 'export_notes'));
-        add_filter('auto_update_plugin', array($this, 'allow_auto_updates'), 10, 2);
     }
 
     public static function activate(): void
@@ -78,6 +77,7 @@ final class BVTN_Plugin
 
         update_option('bvtn_seeded_version', BVTN_VERSION, false);
         update_option('bvtn_plugin_version', BVTN_VERSION, false);
+        self::enable_auto_updates();
     }
 
     public function register_post_type(): void
@@ -103,17 +103,23 @@ final class BVTN_Plugin
                 }
             }
         }
+        if (version_compare($installed, '1.0.2', '<')) {
+            self::enable_auto_updates();
+        }
         update_option('bvtn_plugin_version', BVTN_VERSION, false);
     }
 
-    public function allow_auto_updates(bool $update, $item): bool
+    private static function enable_auto_updates(): void
     {
-        if (is_object($item)
-            && isset($item->plugin)
-            && $item->plugin === plugin_basename(BVTN_FILE)) {
-            return true;
+        $auto_updates = get_site_option('auto_update_plugins', array());
+        if (!is_array($auto_updates)) {
+            $auto_updates = array();
         }
-        return $update;
+        $plugin = plugin_basename(BVTN_FILE);
+        if (!in_array($plugin, $auto_updates, true)) {
+            $auto_updates[] = $plugin;
+            update_site_option('auto_update_plugins', array_values(array_unique($auto_updates)));
+        }
     }
 
     private static function register_post_type_static(): void
